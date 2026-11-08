@@ -1,0 +1,17 @@
+digraph G {
+ graph [rankdir=LR, bgcolor="white", pad="0.3", nodesep="0.5", ranksep="0.9", fontname="DejaVu Sans", label="Facade Pattern — Trip & Reservation flow (UniCarpool)", labelloc=t, fontsize=20];
+ node [shape=box, style="rounded,filled", fontname="DejaVu Sans", fontsize=11, margin="0.2,0.15", penwidth=1.2];
+ edge [fontname="DejaVu Sans", fontsize=10, color="#526276", arrowsize=0.8];
+ client [label="Client\nExpress routes\ntrips/routes.js\nreservations/routes.js", fillcolor="#DAE8FC", color="#6C8EBF"];
+ facade [label="«Facade»\nTripReservationFacade\n──────────\n+ createTrip()\n+ searchTrips()\n+ reserveSeat()", fillcolor="#D5E8D4", color="#82B366", penwidth=2];
+ tsvc [label="TripService\ntrip validation\ncreate / search", fillcolor="#FFF2CC", color="#D6B656"];
+ rsvc [label="ReservationService\ntripId check\ncalls reserve_seat RPC", fillcolor="#FFF2CC", color="#D6B656"];
+ trepo [label="TripRepository\ntrip data access", fillcolor="#F8CECC", color="#B85450"];
+ db [shape=cylinder, label="Supabase PostgreSQL\ntrips, reservations\nreserve_seat()", fillcolor="#E1D5E7", color="#9673A6"];
+ client -> facade [label="calls"];
+ facade -> tsvc [label="delegates trip\noperations"];
+ facade -> rsvc [label="delegates reservation\noperations"];
+ tsvc -> trepo [label="uses"];
+ trepo -> db [label="reads / writes"];
+ rsvc -> db [label="RPC reserve_seat()"];
+}
