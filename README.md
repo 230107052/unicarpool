@@ -8,8 +8,8 @@ Our system connects students who need a ride with students who can offer one. A 
 ## Team
 | Full name | Student ID | GitHub |
 |---|---|---|
-| FULL NAME 1 | STUDENT ID 1 | @username |
-| FULL NAME 2 | STUDENT ID 2 | @username |
+| Arsen Rakhymzhan| 230107014 | Senchik01 |
+| Azamat Mauiya | 230118001 | igengraw |
 | FULL NAME 3 | STUDENT ID 3 | @username |
 | FULL NAME 4 | STUDENT ID 4 | @username |
 
