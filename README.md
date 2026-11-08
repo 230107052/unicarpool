@@ -19,6 +19,7 @@ Layered modular monolith with 4 containers: **Web App** (React) -> **Backend API
 ![Container diagram](docs/architecture/container-diagram.png)
 
 - Decision records: [ADR-001](docs/adr/ADR-001-modular-monolith.md), [ADR-002](docs/adr/ADR-002-atomic-seat-reservation.md), [ADR-003](docs/adr/ADR-003-facade-pattern.md)
+- Decision record: [ADR-001](docs/adr/ADR-001-modular-monolith.md)
 - Rules: the browser talks only to our Backend API (never directly to Supabase); the Backend queries the database *as the signed-in user*, so Row Level Security protects data even if our code has a bug; the `service_role` key lives only in `backend/.env` / `worker/.env` and is never committed.
 
 ## Repository structure

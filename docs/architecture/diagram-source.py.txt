@@ -1,0 +1,162 @@
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import mm
+from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle,
+                                KeepTogether, PageBreak, Preformatted)
+from reportlab.graphics.shapes import Drawing, Rect, String, Line, Polygon
+import math
+
+RED = "#C0392B"
+def ph(t): return f'<font color="{RED}"><b>{t}</b></font>'
+
+# ---------------- diagram ----------------
+def make_diagram():
+    d = Drawing(515, 325)
+    PERSON = colors.HexColor("#08427B"); CONT = colors.HexColor("#1168BD")
+    EXT = colors.HexColor("#8A8A8A"); DB = colors.HexColor("#2E7D6B")
+    def box(x, y, w, h, fill, lines, rx=5):
+        d.add(Rect(x, y, w, h, rx=rx, ry=rx, fillColor=fill, strokeColor=colors.HexColor("#333333"), strokeWidth=0.6))
+        n = len(lines); lh = 8.2
+        top = y + h/2 + (n-1)*lh/2 - 2.5
+        for i, (t, b, s) in enumerate(lines):
+            d.add(String(x+w/2, top - i*lh, t, textAnchor="middle", fontName="Helvetica-Bold" if b else "Helvetica",
+                         fontSize=s, fillColor=colors.white))
+    def arrow(pts, label=None, lx=None, ly=None, size=6, anchor="middle"):
+        for a, b in zip(pts, pts[1:]):
+            d.add(Line(a[0], a[1], b[0], b[1], strokeColor=colors.HexColor("#222222"), strokeWidth=0.8))
+        (x0, y0), (x1, y1) = pts[-2], pts[-1]
+        ang = math.atan2(y1-y0, x1-x0); L = 6
+        p1 = (x1 - L*math.cos(ang-0.4), y1 - L*math.sin(ang-0.4))
+        p2 = (x1 - L*math.cos(ang+0.4), y1 - L*math.sin(ang+0.4))
+        d.add(Polygon([x1, y1, p1[0], p1[1], p2[0], p2[1]], fillColor=colors.HexColor("#222222"), strokeColor=colors.HexColor("#222222")))
+        if label:
+            for i, t in enumerate(label.split("|")):
+                d.add(String(lx, ly - i*7, t, textAnchor=anchor, fontName="Helvetica-Oblique", fontSize=size, fillColor=colors.HexColor("#111111")))
+    # boundary
+    d.add(Rect(5, 8, 360, 240, rx=6, ry=6, fillColor=colors.HexColor("#F4F8FC"), strokeColor=colors.HexColor("#1168BD"), strokeWidth=1, strokeDashArray=[4,3]))
+    d.add(String(358, 238, "University Carpooling System [software system]", textAnchor="end", fontName="Helvetica-Bold", fontSize=6.5, fillColor=colors.HexColor("#1168BD")))
+    # persons
+    for x, name in [(8, "Passenger Student"), (130, "Driver Student"), (252, "System Administrator")]:
+        box(x, 278, 110, 38, PERSON, [(name, True, 7.5), ("[Person]", False, 6)])
+    # containers
+    box(15, 160, 110, 55, CONT, [("Web App", True, 8), ("[Single-page web app]", False, 6), ("Search, reserve, create trips,", False, 6), ("admin moderation screens", False, 6)])
+    box(245, 160, 110, 55, CONT, [("Backend API", True, 8), ("[Modular monolith, REST]", False, 6), ("All business logic, auth,", False, 6), ("module rules, queueing alerts", False, 6)])
+    box(15, 40, 110, 55, DB, [("Database", True, 8), ("[PostgreSQL]", False, 6), ("Users, trips, reservations,", False, 6), ("reports, notification queue", False, 6)])
+    box(245, 40, 110, 55, CONT, [("Notification Worker", True, 8), ("[Background process]", False, 6), ("Sends queued e-mail", False, 6), ("notifications", False, 6)])
+    # externals
+    box(420, 160, 90, 55, EXT, [("University Email /", True, 6.8), ("ID System", True, 6.8), ("[External system]", False, 5.8), ("Verifies students", False, 5.8)])
+    box(420, 40, 90, 55, EXT, [("Email Service", True, 7.5), ("[External system]", False, 5.8), ("Delivers e-mail", False, 5.8)])
+    # persons -> web app
+    arrow([(63, 278), (35, 215)], "Searches,|reserves [HTTPS]", 69, 268, anchor="start")
+    arrow([(185, 278), (70, 215)], "Creates, manages|trips [HTTPS]", 176, 266, anchor="start")
+    arrow([(307, 278), (105, 215)], "Moderates users,|handles reports [HTTPS]", 312, 268, anchor="start")
+    # internal
+    arrow([(125, 190), (245, 190)], "Calls REST API|[JSON/HTTPS]", 185, 206)
+    arrow([(270, 160), (110, 95)], "Reads/writes data [SQL]", 207, 132)
+    arrow([(245, 67), (125, 67)], "Reads pending notifications [SQL]", 185, 71)
+    # to externals
+    arrow([(355, 190), (420, 190)], "Verifies student|identity [OIDC]", 388, 205, size=5.6)
+    arrow([(355, 67), (420, 67)], "Sends e-mail|[SMTP]", 388, 82, size=5.6)
+    return d
+
+dg = make_diagram()
+# standalone diagram pdf for repo
+from reportlab.graphics import renderPDF
+renderPDF.drawToFile(dg, "/home/claude/container-diagram.pdf")
+
+# ---------------- document ----------------
+ss = getSampleStyleSheet()
+base = ParagraphStyle("b", parent=ss["Normal"], fontName="Helvetica", fontSize=8.8, leading=11.2, spaceAfter=3)
+cell = ParagraphStyle("c", parent=base, fontSize=8, leading=9.8, spaceAfter=0)
+cellb = ParagraphStyle("cb", parent=cell, fontName="Helvetica-Bold")
+h1 = ParagraphStyle("h1", parent=base, fontName="Helvetica-Bold", fontSize=11.5, leading=14, spaceBefore=7, spaceAfter=3, textColor=colors.HexColor("#08427B"))
+h2 = ParagraphStyle("h2", parent=base, fontName="Helvetica-Bold", fontSize=9.3, spaceBefore=3, spaceAfter=2)
+title = ParagraphStyle("t", parent=base, fontName="Helvetica-Bold", fontSize=17, leading=21, spaceAfter=1, textColor=colors.HexColor("#08427B"))
+sub = ParagraphStyle("s", parent=base, fontSize=10, leading=12, spaceAfter=5, textColor=colors.HexColor("#444444"))
+bul = ParagraphStyle("bl", parent=base, leftIndent=10, bulletIndent=0, spaceAfter=1.5)
+def P(t, s=base): return Paragraph(t, s)
+def B(t): return Paragraph(t, bul, bulletText="\u2022")
+def tbl(data, widths, header=True):
+    rows = [[Paragraph(c, cellb if (header and i == 0) else cell) if isinstance(c, str) else c for c in r] for i, r in enumerate(data)]
+    t = Table(rows, colWidths=widths, repeatRows=1 if header else 0)
+    st = [("GRID", (0,0), (-1,-1), 0.4, colors.HexColor("#999999")), ("VALIGN", (0,0), (-1,-1), "TOP"),
+          ("TOPPADDING", (0,0), (-1,-1), 2.5), ("BOTTOMPADDING", (0,0), (-1,-1), 2.5),
+          ("LEFTPADDING", (0,0), (-1,-1), 4), ("RIGHTPADDING", (0,0), (-1,-1), 4)]
+    if header: st.append(("BACKGROUND", (0,0), (-1,0), colors.HexColor("#E3ECF7")))
+    t.setStyle(TableStyle(st)); return t
+
+W = A4[0] - 2*16*mm
+story = []
+story += [P("University Carpooling System", title), P("Milestone 2 - Initial Architecture and Repository", sub)]
+story.append(tbl([
+    ["Team name", ph("[TEAM NAME]")],
+    ["Repository", 'https://github.com/igengraw/unicarpool'],
+    ["Project", "Web system that connects students who need a ride to or from university with students who offer free seats (scope as in Milestone 1)."],
+], [32*mm, W-32*mm], header=False))
+story.append(Spacer(1, 4))
+story.append(tbl([["Full name", "Student ID"]] + [[ph(f"[FULL NAME {i}]"), ph(f"[STUDENT ID {i}]")] for i in range(1, 5)], [W*0.62, W*0.38]))
+
+story.append(P("1. Container diagram", h1))
+story.append(dg)
+story.append(P("<i>Figure 1. Container diagram. Dashed boundary = the carpooling system; grey boxes = external systems. Every arrow is labelled with its purpose and protocol.</i>", ParagraphStyle("cap", parent=base, fontSize=7.5, leading=9)))
+story.append(tbl([
+    ["Container", "Type", "Responsibility"],
+    ["Web App", "Runnable app (browser)", "User interface for passengers, drivers and administrators: search trips, create/edit/cancel trips, reserve a seat, view driver and trip information, moderate users and reports (admin screens, access limited by role). Holds no business rules."],
+    ["Backend API", "Runnable service", "Single deployable backend (modular monolith). Registers and verifies students through the University Email / ID System, manages trips and reservations, checks permissions on every request, creates notification records, and provides moderation functions."],
+    ["Notification Worker", "Runnable service", "Reads pending notification records from the database and sends e-mail through the Email Service (FR7). Runs separately so that a slow e-mail provider never delays searches or reservations."],
+    ["Database", "Data store", "PostgreSQL relational database: users, trips, reservations, reports and the notification queue. Single source of truth; reservations are protected by database transactions."],
+], [28*mm, 30*mm, W-58*mm]))
+
+story.append(P("2. Selected architecture", h1))
+story.append(P("<b>Layered modular monolith.</b> The backend is one deployable application divided into business modules (Identity, Trips, Reservations, Notifications, Moderation). Inside each module the code is layered: API/controller, application service, domain, data access. Modules talk to each other only through public interfaces and never read another module's tables directly. The only other runnable parts are the web client, the notification worker and the database."))
+story.append(P("<b>Why it fits.</b> The system has seven functional requirements, one database and a team of four with limited time. A single backend keeps development, testing and deployment simple. Reserving a seat must never sell the same seat twice, and in a monolith this is a normal database transaction instead of a distributed problem."))
+story.append(P("<b>How it supports two quality attributes from Milestone 1</b>", h2))
+story.append(B("<b>Security</b> (reject access to another student's reservation within 2 s, return no protected data): every request passes through one API layer that authenticates the user and checks that the user owns or may see the requested reservation before any data is read. One enforcement point is easier to review and harder to bypass than the same check repeated in several services."))
+story.append(B("<b>Usability</b> (search results within 3 s for at least 95% of searches): a search is one query to one database with indexes on start point, destination and date. There are no network calls between services, so response time depends on a single, well-understood component."))
+story.append(P("<b>Alternative considered: microservices</b> (separate Trips, Reservations and Users services, each with its own database). <b>Not selected</b> because for this scope it adds deployment, network-failure and data-consistency problems (reservation across services) that a four-student team cannot reasonably operate, while giving no benefit the requirements ask for. Module boundaries keep this option open if the system grows."))
+story.append(P("<i>Availability (99% monthly) is not solved by the style alone: the stateless backend can run as several instances behind a load balancer. This is a deployment decision for a later milestone.</i>", ParagraphStyle("n", parent=base, fontSize=8)))
+
+adr = [
+    P("3. Architecture Decision Record 1", h1),
+    tbl([
+        ["Title", "ADR-001: Use a layered modular monolith with a single PostgreSQL database"],
+        ["Status", "Proposed"],
+        ["Context", "A small team must deliver trip creation, search, seat reservation and notifications in limited time. Reservations must stay consistent (no double booking) and access to other users' data must be blocked. Milestone 1 requires searches under 3 s and strict access control."],
+        ["Decision", "Build one backend application with clearly separated modules and layers, backed by one relational database. Modules use each other only through public interfaces; direct access to another module's tables is forbidden. E-mail sending runs in a separate worker that reads a notification queue stored in the same database."],
+        ["Alternatives considered", "(1) Microservices with one database per service. (2) Monolith without module boundaries (all code and tables freely shared)."],
+        ["Positive consequences", "Simple development and deployment. Reservations use ordinary transactions. One place for authorization checks. Fast search without inter-service calls. Modules can later be split into services if needed."],
+        ["Negative consequences", "One backend failure affects all functions (mitigated by several instances). Parts cannot be scaled independently. The team must keep to module boundaries by review discipline; nothing forces it automatically."],
+    ], [32*mm, W-32*mm], header=False)]
+story += adr
+
+story.append(P("4. Repository setup", h1))
+story.append(P("Repository: https://github.com/igengraw/unicarpool (public). It contains the README (project title, problem summary, team members), the current container diagram, and the initial structure below."))
+story.append(Preformatted(
+"""unicarpool/
+  README.md                      title, problem summary, team members, links
+  docs/
+    architecture/                container diagram (image + source file)
+    adr/                         ADR-001 (modular monolith)
+    milestones/                  Milestone 1 and 2 PDFs
+  frontend/                      Web App
+  backend/src/                   identity/ trips/ reservations/ notifications/ moderation/
+  worker/                        Notification Worker""", ParagraphStyle("pre", parent=base, fontName="Courier", fontSize=7.6, leading=9.2, leftIndent=8, spaceAfter=3)))
+
+story.append(P("5. Consistency with Milestone 1 and contributions", h1))
+story.append(P("<b>What changed.</b> One external system was added: the <b>Email Service</b>. Why: FR7 requires notifying users about reservation and trip changes, and Milestone 1 did not show who delivers the messages. University Administration remains a stakeholder (rules, student-only access) but has no direct connection to the system, so it is not on the container diagram. Scope, requirements and quality attributes are otherwise unchanged."))
+story.append(tbl([
+    ["Team member", "Contribution", "Evidence"],
+    [ph("[FULL NAME 1]"), "Container diagram (diagram source and image)", ph("[commit link / file path]")],
+    [ph("[FULL NAME 2]"), "Selected architecture section and alternative comparison", ph("[commit link / PDF section]")],
+    [ph("[FULL NAME 3]"), "ADR-001 (docs/adr/)", ph("[commit link]")],
+    [ph("[FULL NAME 4]"), "README, repository folder structure, consistency section", ph("[commit link]")],
+], [32*mm, W-32*mm-48*mm, 48*mm]))
+story.append(P("<b>AI use disclosure.</b> An AI assistant (Claude) was used to draft and criticize the container diagram, compare architectural alternatives and review the ADR wording. The team reviewed all suggestions, made the final decisions, and can explain and modify every part of this document.", ParagraphStyle("ai", parent=base, spaceBefore=4)))
+
+doc = SimpleDocTemplate("/mnt/user-data/outputs/GroupName_Milestone2.pdf", pagesize=A4, leftMargin=16*mm, rightMargin=16*mm,
+                        topMargin=14*mm, bottomMargin=13*mm, title="University Carpooling System - Milestone 2")
+def foot(c, d):
+    c.setFont("Helvetica", 7.5); c.setFillColor(colors.grey)
+    c.drawString(16*mm, 7*mm, "University Carpooling System | Milestone 2"); c.drawRightString(A4[0]-16*mm, 7*mm, f"{d.page}")
+doc.build(story, onFirstPage=foot, onLaterPages=foot)

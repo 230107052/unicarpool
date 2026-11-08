@@ -10,6 +10,9 @@ router.use(requireAuth);
 router.get('/', asyncHandler(async (req, res) => res.json(await facade.searchTrips(req.token, req.query))));
 router.post('/', asyncHandler(async (req, res) =>
   res.status(201).json(await facade.createTrip(req.token, req.user.id, req.body || {}))));
+router.get('/', asyncHandler(async (req, res) => res.json(await service.search(req.token, req.query))));
+router.post('/', asyncHandler(async (req, res) =>
+  res.status(201).json(await service.createTrip(req.token, req.user.id, req.body || {}))));
 router.get('/:id', asyncHandler(async (req, res) => res.json(await service.getTrip(req.token, req.params.id))));
 router.patch('/:id', asyncHandler(async (req, res) =>
   res.json(await service.updateTrip(req.token, req.params.id, req.body || {}))));
