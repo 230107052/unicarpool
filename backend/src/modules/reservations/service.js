@@ -19,12 +19,18 @@ export async function getOne(token, id) {
 }
 
 // FR4: atomic seat reservation is done inside the database (reserve_seat)
-export async function reserve(token, tripId) {
+
+export async function reserve(token, tripId, clientFactory = userClient) {
   if (!tripId) throw new HttpError(400, 'tripId is required');
-  const { data, error } = await userClient(token).rpc('reserve_seat', { p_trip_id: tripId });
+
+  const { data, error } = await clientFactory(token).rpc('reserve_seat', {
+    p_trip_id: tripId
+  });
+
   throwIfError(error);
   return data;
 }
+
 
 export async function cancel(token, id) {
   const { data, error } = await userClient(token).rpc('cancel_reservation', { p_reservation_id: id });
