@@ -10,8 +10,8 @@ Our system connects students who need a ride with students who can offer one. A 
 |---|---|---|
 | Arsen Rakhymzhan| 230107014 | Senchik01 |
 | Azamat Mauiya | 230118001 | igengraw |
-| FULL NAME 3 | STUDENT ID 3 | @username |
-| FULL NAME 4 | STUDENT ID 4 | @username |
+| Razbekov Alisher | 230107052 | 230107052 |
+| Beisen Adilov | 220103323| beysen-nr |
 
 ## Architecture
 Layered modular monolith with 4 containers: **Web App** (React) -> **Backend API** (Node.js/Express) -> **Database** (Supabase PostgreSQL), plus a **Notification Worker** (Node.js).
